@@ -718,6 +718,30 @@ describe("trusted-proxy auth", () => {
       expect(res.user).toBe("nick@example.com");
     });
 
+    it("fails closed when forwarded headers are present but the client chain resolves to loopback", async () => {
+      const res = await authorizeGatewayConnect({
+        auth: {
+          mode: "trusted-proxy",
+          allowTailscale: false,
+          trustedProxy: trustedProxyConfig,
+          token: "secret",
+        },
+        connectAuth: null,
+        trustedProxies: ["127.0.0.1"],
+        req: {
+          socket: { remoteAddress: "127.0.0.1" },
+          headers: {
+            host: "localhost",
+            "x-forwarded-for": "127.0.0.1",
+            "x-forwarded-proto": "https",
+          },
+        } as never,
+      });
+
+      expect(res.ok).toBe(false);
+      expect(res.reason).toBe("trusted_proxy_user_missing");
+    });
+
     it("rejects same-host proxy request with missing required header", async () => {
       const res = await authorizeGatewayConnect({
         auth: {

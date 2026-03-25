@@ -132,14 +132,7 @@ export function isLocalDirectRequest(
     return isLocalishHost(req.headers?.host);
   }
 
-  // resolveRequestClientIp returns undefined when the remote is a trusted proxy but
-  // the forwarded chain is missing or all-loopback (e.g. x-forwarded-for: 127.0.0.1
-  // from a same-host proxy). In that case fall back to the raw socket address so
-  // that loopback-proxy-to-loopback-gateway traffic is still recognized as local.
-  const clientIp =
-    resolveRequestClientIp(req, trustedProxies, allowRealIpFallback) ??
-    req.socket?.remoteAddress ??
-    "";
+  const clientIp = resolveRequestClientIp(req, trustedProxies, allowRealIpFallback) ?? "";
   if (!isLoopbackAddress(clientIp)) {
     return false;
   }

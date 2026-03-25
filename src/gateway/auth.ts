@@ -388,6 +388,9 @@ function authorizeTokenAuth(params: {
     return { ok: false, reason: "token_missing_config" };
   }
   if (!params.connectToken) {
+    // Don't burn rate-limit slots for missing credentials — the client
+    // simply hasn't provided a token yet (e.g. bare browser open).
+    // Only actual *wrong* credentials should count as failures.
     return { ok: false, reason: "token_missing" };
   }
   if (!safeEqualSecret(params.connectToken, params.authToken)) {

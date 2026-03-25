@@ -132,6 +132,9 @@ export function isLocalDirectRequest(
     return isLocalishHost(req.headers?.host);
   }
 
+  // When forwarded headers are present, resolveRequestClientIp intentionally fails closed
+  // if the proxy chain is missing or invalid. Do not fall back to the raw socket address here,
+  // or proxied requests can be reclassified as local-direct.
   const clientIp = resolveRequestClientIp(req, trustedProxies, allowRealIpFallback) ?? "";
   if (!isLoopbackAddress(clientIp)) {
     return false;

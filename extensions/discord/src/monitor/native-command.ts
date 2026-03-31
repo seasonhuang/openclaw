@@ -58,6 +58,7 @@ import {
   resolveDiscordGuildEntry,
   resolveDiscordMemberAccessState,
   resolveDiscordOwnerAccess,
+  resolveGroupDmAllow,
 } from "./allow-list.js";
 import { resolveDiscordDmCommandAccess } from "./dm-command-auth.js";
 import { handleDiscordDmCommandDecision } from "./dm-command-decision.js";
@@ -434,8 +435,19 @@ async function resolveDiscordNativeAutocompleteAuthorized(params: {
       return false;
     }
   }
-  if (isGroupDm && discordConfig?.dm?.groupEnabled === false) {
-    return false;
+  if (isGroupDm) {
+    if (discordConfig?.dm?.groupEnabled === false) {
+      return false;
+    }
+    const groupDmAllowed = resolveGroupDmAllow({
+      channels: discordConfig?.dm?.groupChannels,
+      channelId: rawChannelId,
+      channelName,
+      channelSlug,
+    });
+    if (!groupDmAllowed) {
+      return false;
+    }
   }
   if (!isDirectMessage) {
     const { hasAccessRestrictions, memberAllowed } = resolveDiscordMemberAccessState({
@@ -891,9 +903,21 @@ async function dispatchDiscordCommandInteraction(params: {
       return;
     }
   }
-  if (isGroupDm && discordConfig?.dm?.groupEnabled === false) {
-    await respond("Discord group DMs are disabled.");
-    return;
+  if (isGroupDm) {
+    if (discordConfig?.dm?.groupEnabled === false) {
+      await respond("Discord group DMs are disabled.");
+      return;
+    }
+    const groupDmAllowed = resolveGroupDmAllow({
+      channels: discordConfig?.dm?.groupChannels,
+      channelId: rawChannelId,
+      channelName,
+      channelSlug,
+    });
+    if (!groupDmAllowed) {
+      await respond("This channel is not allowed.");
+      return;
+    }
   }
 
   const menu = resolveCommandArgMenu({

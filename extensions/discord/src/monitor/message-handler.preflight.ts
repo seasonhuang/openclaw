@@ -42,6 +42,7 @@ import {
   resolveDiscordSystemLocation,
   resolveTimestampMs,
 } from "./format.js";
+import { resolveDiscordClaimOwnership } from "./instance-claims.js";
 import type {
   DiscordMessagePreflightContext,
   DiscordMessagePreflightParams,
@@ -52,7 +53,6 @@ import {
   resolveDiscordMessageText,
 } from "./message-utils.js";
 import { resolveDiscordPreflightAudioMentionContext } from "./preflight-audio.js";
-import { resolveDiscordClaimOwnership } from "./instance-claims.js";
 import {
   buildDiscordRoutePeer,
   resolveDiscordConversationRoute,
@@ -753,11 +753,11 @@ export async function preflightDiscordMessage(
     );
   }
 
-    guildInfo,
-    memberRoleIds,
-    sender,
-    allowNameMatching,
+  const allowTextCommands = shouldHandleTextCommands({
+    cfg: params.cfg,
+    surface: "discord",
   });
+  const hasControlCommandInMessage = hasControlCommand(baseText, params.cfg);
 
   if (!isDirectMessage) {
     const { ownerAllowList, ownerAllowed: ownerOk } = resolveDiscordOwnerAccess({
@@ -808,7 +808,6 @@ export async function preflightDiscordMessage(
   logDebug(
     `[discord-preflight] shouldRequireMention=${shouldRequireMention} baseRequireMention=${shouldRequireMentionByConfig} boundThreadSession=${isBoundThreadSession} mentionGate.shouldSkip=${mentionGate.shouldSkip} wasMentioned=${wasMentioned}`,
   );
-
 
   if (isGuildMessage && shouldRequireMention) {
     if (botId && mentionGate.shouldSkip) {
